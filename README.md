@@ -1,4 +1,4 @@
-# CyberSentinel AI
+# Omnisec Analyzer
 ### Detect. Analyze. Protect.
 
 A complete, beginner-friendly cybersecurity testing and defensive analysis platform built for college hackathons and project expos.
@@ -7,7 +7,7 @@ A complete, beginner-friendly cybersecurity testing and defensive analysis platf
 
 ## Table of Contents
 
-1. What is CyberSentinel AI?
+1. What is  Omnisec Analyzer?
 2. Problem Statement
 3. Project Objectives
 4. Features at a Glance
@@ -30,11 +30,10 @@ A complete, beginner-friendly cybersecurity testing and defensive analysis platf
 
 ---
 
-## 1. What is CyberSentinel AI?
+## 1. What is Omnisec Analyzer?
 
-CyberSentinel AI is a Security Operations Center (SOC) style dashboard that lets students learn cybersecurity hands-on.
+Omnisec Analyzer is a Security Operations Center (SOC) style dashboard that lets students learn cybersecurity hands-on.
 
-**Telugu (telugu vavrinam):** CyberSentinel AI anedi web application bhardatanu nerchukovadaniki tayaru chesina oka vidya platform. Idi 4 mukhyamaina bhardatha pariksha modules ni andistundi.
 
 Modules:
 - IP Geolocation Intelligence
@@ -53,7 +52,7 @@ Many CS students learn cybersecurity only from textbooks. They never see:
 - Why missing security headers are dangerous
 - How rate limiting protects an API
 
-CyberSentinel AI provides a safe, hands-on learning environment right in your browser.
+Omnisec Analyzer provides a safe, hands-on learning environment right in your browser.
 
 ---
 
