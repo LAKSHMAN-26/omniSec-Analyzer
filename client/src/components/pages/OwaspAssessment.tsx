@@ -38,6 +38,7 @@ interface RealtimeCheck {
   evidence: string;
   remediation: string;
   limitations: string;
+  wstgReferences?: Array<{ id: string; url: string }>;
 }
 
 interface TargetItem {
@@ -80,7 +81,7 @@ export const OwaspAssessment: React.FC = () => {
   const [currentTestName, setCurrentTestName] = useState<string>('');
   const [currentEndpoint, setCurrentEndpoint] = useState<string>('');
   const [completedCount, setCompletedCount] = useState<number>(0);
-  const [totalCount, setTotalCount] = useState<number>(10);
+  const [totalCount, setTotalCount] = useState<number>(0);
   const [findingsCount, setFindingsCount] = useState<number>(0);
   const [warningsCount, setWarningsCount] = useState<number>(0);
   const [passedCount, setPassedCount] = useState<number>(0);
@@ -188,7 +189,7 @@ export const OwaspAssessment: React.FC = () => {
         const data = JSON.parse(e.data);
         setCurrentTestName(data.checkName);
         setCurrentEndpoint(data.endpoint);
-        setTotalCount(data.totalChecks || 10);
+        setTotalCount(data.totalChecks || 0);
       });
 
       es.addEventListener('check_result', (e) => {
@@ -253,7 +254,7 @@ export const OwaspAssessment: React.FC = () => {
           </div>
           <div>
             <h1 className="text-xl font-bold text-white font-sans">
-              CyberSentinel AI — Real-Time OWASP Top 10 Security Scanner
+              CyberSentinel AI — Real-Time OWASP Top 10 + WSTG Scanner
             </h1>
             <p className="text-xs text-cyan-400 font-mono">
               Passive URL Safety Analyzer & Loopback Educational Lab Audit
@@ -699,11 +700,11 @@ export const OwaspAssessment: React.FC = () => {
         </div>
       )}
 
-      {/* SECTION 5: 10 ASSESSMENT CARDS GRID */}
+      {/* SECTION 5: ASSESSMENT CARDS GRID */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-mono font-bold uppercase tracking-wider text-gray-400">
-            Educational OWASP Top 10 Assessment Cards ({checks.length} checks logged)
+            OWASP Top 10 & WSTG Assessment Checks ({checks.length} checks logged)
           </h2>
           <span className="text-xs font-mono text-gray-500">
             Target: {selectedTarget ? selectedTarget.name : 'Local Lab'}
@@ -752,6 +753,21 @@ export const OwaspAssessment: React.FC = () => {
                       <p className="text-xs text-gray-300 font-mono mt-1">
                         {checkTitle}
                       </p>
+                      {check.wstgReferences && check.wstgReferences.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {check.wstgReferences.map((reference) => (
+                            <a
+                              key={reference.id}
+                              href={reference.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="rounded border border-violet-800/70 bg-violet-950/40 px-2 py-0.5 font-mono text-[10px] text-violet-300 hover:text-violet-200"
+                            >
+                              {reference.id} ↗
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
 

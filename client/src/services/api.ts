@@ -1,10 +1,10 @@
 import type { 
   ScanHistoryItem, 
   ScanFinding, 
-  GeolocationData, 
+  GeolocationData,
+  GeolocationProviderStatus,
   SqlScanResponse, 
-  OwaspScanResponse, 
-  RateLimitScanResponse 
+  OwaspScanResponse
 } from '../types';
 import type { UrlAnalysisResult } from './urlAnalyzer';
 
@@ -62,7 +62,10 @@ export const apiService = {
   }),
 
   // Geolocation
-  lookupIp: (ip: string) => fetchJson<GeolocationData>(`/geolocation/${encodeURIComponent(ip)}`),
+  getGeolocationProviderStatus: () => fetchJson<GeolocationProviderStatus>('/geolocation/provider-status'),
+  lookupIp: (ip: string, signal?: AbortSignal) => fetchJson<GeolocationData>(`/geolocation/${encodeURIComponent(ip)}`, {
+    signal
+  }),
 
   // SQL Injection
   runSqlScan: (targetMode: 'vulnerable' | 'secure') => 
@@ -88,13 +91,6 @@ export const apiService = {
     fetchJson<OwaspScanResponse>('/scans/owasp/scan', {
       method: 'POST',
       body: JSON.stringify({ owaspEdition })
-    }),
-
-  // Rate Limiting
-  runRateLimitTest: (config: { targetEndpoint: 'protected' | 'unprotected'; requestLimit: number }) =>
-    fetchJson<RateLimitScanResponse>('/scans/rate-limit/scan', {
-      method: 'POST',
-      body: JSON.stringify(config)
     }),
 
   // Scan History

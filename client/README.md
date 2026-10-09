@@ -1,32 +1,14 @@
-# React + TypeScript + Vite
+# OmniSec Analyzer — Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+This directory contains the React, TypeScript, Vite, and Tailwind CSS v4 frontend for OmniSec Analyzer. The client uses the app's sidebar-tab navigation and communicates with the Express API for server-backed features.
 
-Currently, two official plugins are available:
+## Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```powershell
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Run `npm run build` for a TypeScript check and production bundle, or `npm run lint` to lint the client.
+
+Start the backend separately from `..\server` with `npm run dev` for features that require API access. OSINT Explorer is a client-side resource directory; Identity Attack Paths is a fictional, client-side graph simulation. See the repository [README](../README.md) and [technical documentation](../TECHNICAL_DOCUMENTATION.md) for full setup, safety boundaries, and feature details.

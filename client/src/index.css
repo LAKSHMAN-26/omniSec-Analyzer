@@ -48,3 +48,123 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #374151;
 }
+
+@keyframes osint-node-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .osint-node-enter {
+    animation: none !important;
+  }
+}
+
+.geo-map-shell:fullscreen {
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  border-radius: 0;
+  border: 0;
+  background: #08111e;
+}
+
+.geo-map-shell:fullscreen .geo-leaflet-map {
+  min-height: 100vh;
+}
+
+.geo-leaflet-map {
+  background: #08111e;
+}
+
+.geo-leaflet-map .leaflet-control-zoom a {
+  color: #e2e8f0;
+  background: rgba(2, 6, 23, 0.9);
+  border-color: rgba(71, 85, 105, 0.8);
+}
+
+.geo-leaflet-map .leaflet-control-zoom a:hover {
+  color: #67e8f9;
+  background: #0f172a;
+}
+
+.geo-leaflet-map .leaflet-control-attribution {
+  color: #94a3b8;
+  background: rgba(2, 6, 23, 0.78);
+}
+
+.geo-leaflet-map .leaflet-control-attribution a {
+  color: #67e8f9;
+}
+
+.geo-location-icon {
+  position: relative;
+  border: 0;
+  background: transparent;
+}
+
+.geo-location-pulse,
+.geo-location-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
+  border-radius: 9999px;
+  transform: translate(-50%, -50%);
+}
+
+.geo-location-pulse {
+  width: 30px;
+  height: 30px;
+  border: 1.5px solid rgba(34, 211, 238, 0.8);
+  background: rgba(6, 182, 212, 0.16);
+  box-shadow: 0 0 18px rgba(6, 182, 212, 0.45);
+  animation: geo-marker-pulse 2.4s ease-out infinite;
+}
+
+.geo-location-dot {
+  width: 10px;
+  height: 10px;
+  border: 2px solid white;
+  background: #06b6d4;
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.95);
+}
+
+.geo-popup {
+  display: grid;
+  gap: 3px;
+  min-width: 130px;
+  color: #0f172a;
+  font: 12px/1.4 system-ui, sans-serif;
+}
+
+.geo-popup strong {
+  font-size: 13px;
+}
+
+.geo-popup span {
+  color: #475569;
+}
+
+@keyframes geo-marker-pulse {
+  0% {
+    opacity: 0.85;
+    transform: translate(-50%, -50%) scale(0.55);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .geo-location-pulse {
+    animation: none;
+  }
+}

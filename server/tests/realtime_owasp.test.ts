@@ -3,7 +3,7 @@ import request from 'supertest';
 import { app } from '../src/app.js';
 import { db } from '../src/database/db.js';
 import { validateLabTarget } from '../src/services/targetRegistry.js';
-import { cancelRealtimeScan } from '../src/services/realtimeScanner.js';
+import { cancelRealtimeScan, owaspChecksList } from '../src/services/realtimeScanner.js';
 
 // =========================================================================
 // CyberSentinel AI — Real-Time OWASP Educational Lab Test Suite
@@ -143,6 +143,22 @@ describe('2. Vulnerable vs Secure Demo Endpoints Comparison', () => {
 });
 
 describe('3. Real-Time Scan Engine, Database Persistence & Reports', () => {
+  it('keeps the OWASP access-control check linked to the WSTG IDOR guidance', () => {
+    const accessControlCheck = owaspChecksList.find(
+      (check) => check.checkName === 'Unauthenticated Object Access Verification'
+    );
+
+    expect(accessControlCheck?.wstgReferences?.map((reference) => reference.id)).toContain('WSTG-ATHZ-04');
+  });
+
+  it('should no longer expose the removed standalone API tester endpoints', async () => {
+    const rateLimitResponse = await request(app).post('/api/scans/rate-limit/scan');
+    const bolaResponse = await request(app).get('/api/scans/bola/vulnerable/account/1002');
+
+    expect(rateLimitResponse.status).toBe(404);
+    expect(bolaResponse.status).toBe(404);
+  });
+
   it('should list registered educational lab targets', async () => {
     const res = await request(app).get('/api/scans/realtime/targets');
     expect(res.status).toBe(200);
@@ -205,6 +221,6 @@ describe('3. Real-Time Scan Engine, Database Persistence & Reports', () => {
     const res = await request(app).get('/api/scans/realtime/reports/SCAN-TEST-REPORT-1/download?format=html');
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toContain('text/html');
-    expect(res.text).toContain('CyberSentinel AI — Security Assessment Report');
+    expect(res.text).toContain('CyberSentinel AI — OWASP and WSTG Security Assessment');
   });
 });

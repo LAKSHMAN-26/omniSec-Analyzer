@@ -5,7 +5,6 @@ import { Settings as SettingsIcon, Save, ShieldCheck, Check } from 'lucide-react
 export const Settings: React.FC = () => {
   const [settings, setSettings] = useState<Record<string, string>>({
     owasp_edition: '2021',
-    rate_limit_default_max: '100',
     theme: 'dark',
     demo_mode: 'true'
   });
@@ -63,18 +62,6 @@ export const Settings: React.FC = () => {
             <option value="2021">2021 Official Edition (A01:2021 - A10:2021)</option>
             <option value="2017">2017 Legacy Edition (A1:2017 - A10:2017)</option>
           </select>
-        </div>
-
-        <div>
-          <label className="block text-xs font-mono font-semibold text-gray-300 uppercase mb-2">
-            Default API Rate Limiting Threshold
-          </label>
-          <input
-            type="number"
-            value={settings.rate_limit_default_max || '100'}
-            onChange={(e) => setSettings({ ...settings, rate_limit_default_max: e.target.value })}
-            className="w-full md:w-1/2 bg-[#0B0F19] border border-[#1F2937] text-white text-xs font-mono px-4 py-2.5 rounded-xl outline-none focus:border-cyan-500"
-          />
         </div>
 
         <div>

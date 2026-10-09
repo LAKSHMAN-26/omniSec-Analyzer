@@ -1,213 +1,294 @@
-import React, { useState } from 'react';
-import { apiService } from '../../services/api';
-import type { GeolocationData } from '../../types';
+import { useEffect, useRef, useState } from 'react';
+import {
+  AlertCircle,
+  Building2,
+  Clock3,
+  Globe2,
+  Info,
+  MapPin,
+  Radio,
+  Search,
+  ShieldAlert,
+  Wifi
+} from 'lucide-react';
+import { CityLocationMap } from '../geolocation/CityLocationMap';
 import { TooltipInfo } from '../TooltipInfo';
-import { Globe, Search, MapPin, AlertCircle, Info } from 'lucide-react';
+import { apiService } from '../../services/api';
+import type { GeolocationData, GeolocationProviderStatus } from '../../types';
+
+function countryFlag(countryCode: string | undefined): string | null {
+  if (!countryCode || !/^[a-z]{2}$/i.test(countryCode)) return null;
+  return String.fromCodePoint(...countryCode.toUpperCase().split('').map((letter) => 127397 + letter.charCodeAt(0)));
+}
+
+function isLiveResult(result: GeolocationData): boolean {
+  return result.source === 'live_provider' && result.dataOrigin === 'live_provider';
+}
+
+function hasCoordinates(result: GeolocationData): boolean {
+  return typeof result.lat === 'number' &&
+    Number.isFinite(result.lat) &&
+    result.lat >= -90 &&
+    result.lat <= 90 &&
+    typeof result.lon === 'number' &&
+    Number.isFinite(result.lon) &&
+    result.lon >= -180 &&
+    result.lon <= 180;
+}
 
 export const Geolocation: React.FC = () => {
-  const [ipInput, setIpInput] = useState<string>('8.8.8.8');
+  const [ipInput, setIpInput] = useState('');
   const [result, setResult] = useState<GeolocationData | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [providerStatus, setProviderStatus] = useState<GeolocationProviderStatus | null>(null);
+  const [providerStatusError, setProviderStatusError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const controllerRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
 
-  const handleLookup = async (targetIp?: string) => {
-    const ip = targetIp || ipInput;
-    if (!ip.trim()) {
-      setError('Please enter a valid IP address.');
+  useEffect(() => {
+    let cancelled = false;
+    apiService.getGeolocationProviderStatus()
+      .then((status) => {
+        if (!cancelled) {
+          setProviderStatus(status);
+          setProviderStatusError(null);
+        }
+      })
+      .catch((cause: unknown) => {
+        if (!cancelled) {
+          setProviderStatusError(cause instanceof Error ? cause.message : 'Could not verify the geolocation provider.');
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => () => {
+    requestIdRef.current += 1;
+    controllerRef.current?.abort();
+  }, []);
+
+  const handleLookup = async (targetIp = ipInput) => {
+    const ip = targetIp.trim();
+    if (!ip) {
+      setError('Enter an IPv4 or IPv6 address to locate.');
+      setResult(null);
       return;
     }
 
+    controllerRef.current?.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
+    const requestId = ++requestIdRef.current;
+    setIpInput(ip);
     setLoading(true);
     setError(null);
     setResult(null);
 
+    const timeoutId = window.setTimeout(() => controller.abort(), 10000);
     try {
-      const data = await apiService.lookupIp(ip);
+      const data = await apiService.lookupIp(ip, controller.signal);
+      if (requestId !== requestIdRef.current) return;
       setResult(data);
-      if (data.error) {
+      if (!data.isValid) {
+        setError(data.error || 'Enter a valid IPv4 or IPv6 address.');
+      } else if (data.error) {
         setError(data.error);
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to query IP geolocation.');
+    } catch (cause) {
+      if (requestId !== requestIdRef.current || controller.signal.aborted && controllerRef.current !== controller) return;
+      setResult(null);
+      setError(cause instanceof Error ? cause.message : 'The IP geolocation lookup failed.');
     } finally {
-      setLoading(false);
+      window.clearTimeout(timeoutId);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
   };
 
+  const resultIsLive = result ? isLiveResult(result) : false;
+  const flag = countryFlag(result?.countryCode);
+
   return (
-    <div className="space-y-6">
-      {/* Module Title Banner */}
-      <div className="bg-[#111827] border border-[#1F2937] p-6 rounded-2xl shadow-xl">
-        <div className="flex items-center space-x-3 mb-2">
-          <div className="w-9 h-9 rounded-xl bg-cyan-950 text-cyan-400 border border-cyan-800 flex items-center justify-center">
-            <Globe className="w-5 h-5" />
+    <div className="space-y-5">
+      <header className="rounded-2xl border border-[#1F2937] bg-[#111827] p-5 shadow-xl sm:p-6">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-800 bg-cyan-950 text-cyan-300">
+            <Globe2 className="h-5 w-5" />
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-white font-sans">Geolocation Intelligence</h1>
-            <p className="text-xs text-cyan-400 font-mono">IP Address & Network Metadata Lookup</p>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl font-bold text-white">Geolocation Intelligence</h1>
+              <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wide ${
+                providerStatus
+                  ? 'border-emerald-700/70 bg-emerald-950/40 text-emerald-300'
+                  : 'border-amber-700/70 bg-amber-950/40 text-amber-300'
+              }`}>
+                <Radio className="h-3 w-3" />
+                {providerStatus ? 'Live provider · no key' : 'Provider status unavailable'}
+              </span>
+            </div>
+            <p className="mt-1 text-xs leading-relaxed text-gray-400">
+              Locate an estimated city or network region from IP geolocation data.
+              <TooltipInfo
+                term="IP geolocation"
+                englishExplanation="IP geolocation estimates the network or provider region associated with an IP address. It does not identify a person’s exact location."
+              />
+            </p>
           </div>
         </div>
-        <p className="text-xs text-gray-400 leading-relaxed mt-2">
-          Learn how IP addresses resolve to approximate geographic regions and Autonomous System Networks (ISPs).
-          <TooltipInfo 
-            term="Geolocation" 
-            englishExplanation="IP Geolocation maps an IP address to the registered city/country of the network operator (ISP)."
-          />
-        </p>
-      </div>
+      </header>
 
-      {/* Input Form & Demo IP Buttons */}
-      <div className="bg-[#111827] border border-[#1F2937] p-6 rounded-2xl">
-        <label className="block text-xs font-mono font-semibold text-gray-300 uppercase mb-2">
-          Enter Target IP Address (IPv4 or IPv6)
-        </label>
-
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
+      <section className="rounded-2xl border border-[#1F2937] bg-[#111827] p-4 sm:p-5">
+        <form
+          className="flex flex-col gap-3 sm:flex-row"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleLookup();
+          }}
+        >
+          <label className="min-w-0 flex-1">
+            <span className="mb-1.5 block text-[10px] font-mono font-semibold uppercase tracking-widest text-slate-400">
+              IP address · IPv4 or IPv6
+            </span>
             <input
               type="text"
               value={ipInput}
-              onChange={(e) => setIpInput(e.target.value)}
-              placeholder="e.g. 8.8.8.8 or 2001:4860:4860::8888"
-              className="w-full bg-[#0B0F19] border border-[#1F2937] focus:border-cyan-500 rounded-xl px-4 py-2.5 text-sm font-mono text-white placeholder-gray-600 outline-none transition-all"
+              onChange={(event) => setIpInput(event.target.value)}
+              placeholder="e.g. 8.8.8.8"
+              aria-label="IP address"
+              autoComplete="off"
+              spellCheck={false}
+              className="w-full rounded-xl border border-slate-700 bg-[#080e18] px-4 py-3 font-mono text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/10"
             />
-          </div>
-
+          </label>
           <button
-            onClick={() => handleLookup()}
+            type="submit"
             disabled={loading}
-            className="bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-black font-bold font-mono text-xs px-6 py-2.5 rounded-xl shadow-lg shadow-cyan-950 flex items-center justify-center space-x-2 transition-all disabled:opacity-50"
+            className="mt-auto inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-cyan-700 px-5 py-3 font-mono text-xs font-bold text-slate-950 shadow-lg shadow-cyan-950/50 transition hover:from-cyan-500 hover:to-cyan-600 disabled:cursor-wait disabled:opacity-60 sm:min-w-40"
           >
-            {loading ? (
-              <span className="animate-spin">⌛</span>
-            ) : (
-              <Search className="w-4 h-4" />
-            )}
-            <span>Lookup IP Intel</span>
+            <Search className="h-4 w-4" />
+            {loading ? 'Locating…' : 'Locate IP'}
           </button>
-        </div>
-
-        {/* Quick Demo Shortcuts */}
-        <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-gray-500 font-mono text-[11px]">Demo Samples:</span>
-          {['8.8.8.8', '1.1.1.1', '157.240.22.35', '127.0.0.1'].map((sample) => (
+        </form>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="mr-1 text-[10px] font-mono uppercase tracking-wider text-slate-500">Example IPs:</span>
+          {['8.8.8.8', '1.1.1.1', '208.67.222.222'].map((ip) => (
             <button
-              key={sample}
-              onClick={() => {
-                setIpInput(sample);
-                handleLookup(sample);
-              }}
-              className="bg-[#0B0F19] hover:bg-gray-800 text-cyan-400 border border-gray-800 hover:border-cyan-500/40 px-2.5 py-1 rounded-lg font-mono text-xs transition-all"
+              key={ip}
+              type="button"
+              disabled={loading}
+              onClick={() => void handleLookup(ip)}
+              className="rounded-lg border border-slate-700 bg-slate-950/70 px-2.5 py-1.5 font-mono text-[11px] text-cyan-200 transition hover:border-cyan-700 hover:bg-cyan-950/40 disabled:opacity-50"
             >
-              {sample}
+              {ip}
             </button>
           ))}
+          <span className="text-[10px] text-slate-600">Each example performs a live provider lookup.</span>
         </div>
-      </div>
+        {providerStatusError && (
+          <div role="status" className="mt-3 flex items-start gap-2 rounded-xl border border-amber-900/60 bg-amber-950/20 p-3 text-[11px] leading-relaxed text-amber-100/80">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+            <p>Provider status could not be verified: {providerStatusError} IP lookups still go through the backend.</p>
+          </div>
+        )}
+      </section>
 
-      {/* Error Banner */}
       {error && (
-        <div className="bg-rose-950/60 border border-rose-800/80 p-4 rounded-xl text-rose-300 text-xs flex items-center space-x-3">
-          <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+        <div role="alert" className="flex items-start gap-2.5 rounded-xl border border-rose-800/80 bg-rose-950/40 p-3.5 text-xs text-rose-200">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-300" />
           <span>{error}</span>
         </div>
       )}
 
-      {/* Results View */}
-      {result && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Metadata Cards */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="bg-[#111827] border border-[#1F2937] p-6 rounded-2xl">
-              <div className="flex items-center justify-between border-b border-[#1F2937] pb-4 mb-4">
-                <div>
-                  <span className="text-xs text-gray-500 font-mono uppercase">Queried Address</span>
-                  <h2 className="text-2xl font-bold font-mono text-cyan-400">{result.ip}</h2>
-                </div>
-                <div className="text-right">
-                  <span className="text-xs font-mono bg-cyan-950 text-cyan-300 border border-cyan-800 px-3 py-1 rounded-full font-bold">
-                    {result.version}
-                  </span>
-                  <div className="text-[10px] text-gray-500 font-mono mt-1">
-                    Source: {result.source === 'live_provider' ? 'Live API Provider' : 'Local Demo Provider'}
-                  </div>
-                </div>
-              </div>
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0">
+          <CityLocationMap result={result} loading={loading} />
+        </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-[#0B0F19] border border-[#1F2937] p-4 rounded-xl">
-                  <span className="text-[11px] text-gray-500 font-mono uppercase">Country / Region</span>
-                  <p className="text-sm font-bold text-white mt-1">
-                    {result.country || 'N/A'}, {result.region || 'N/A'}
-                  </p>
-                </div>
-
-                <div className="bg-[#0B0F19] border border-[#1F2937] p-4 rounded-xl">
-                  <span className="text-[11px] text-gray-500 font-mono uppercase">City Info</span>
-                  <p className="text-sm font-bold text-white mt-1">{result.city || 'N/A'}</p>
-                </div>
-
-                <div className="bg-[#0B0F19] border border-[#1F2937] p-4 rounded-xl">
-                  <span className="text-[11px] text-gray-500 font-mono uppercase">ISP Network Operator</span>
-                  <p className="text-sm font-bold text-cyan-300 mt-1 font-mono">{result.isp || 'N/A'}</p>
-                </div>
-
-                <div className="bg-[#0B0F19] border border-[#1F2937] p-4 rounded-xl">
-                  <span className="text-[11px] text-gray-500 font-mono uppercase">ASN Number</span>
-                  <p className="text-sm font-bold text-violet-400 mt-1 font-mono">{result.asn || 'N/A'}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Disclaimer Box */}
-            <div className="bg-amber-950/20 border border-amber-900/40 p-4 rounded-xl text-amber-300/90 text-xs flex items-start space-x-3">
-              <Info className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-              <div>
-                <strong className="block text-amber-400 font-mono uppercase mb-0.5">Important Security Notice & Limitations:</strong>
-                <p className="leading-relaxed">{result.disclaimer}</p>
-              </div>
-            </div>
+        <aside className="flex flex-col gap-3 rounded-2xl border border-[#1F2937] bg-[#111827] p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Lookup result</span>
+            {result && (
+              <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 font-mono text-[9px] font-bold uppercase ${
+                resultIsLive || result.dataOrigin === 'private_network'
+                  ? 'border-emerald-700/70 bg-emerald-950/40 text-emerald-300'
+                  : 'border-amber-700/70 bg-amber-950/40 text-amber-300'
+              }`}>
+                {resultIsLive ? <Radio className="h-3 w-3" /> : <Info className="h-3 w-3" />}
+                {resultIsLive ? 'Live lookup' : result.dataOrigin === 'private_network' ? 'Private / reserved' : 'Invalid IP'}
+              </span>
+            )}
           </div>
 
-          {/* Location Map Preview Panel */}
-          <div className="bg-[#111827] border border-[#1F2937] p-6 rounded-2xl flex flex-col justify-between">
-            <div>
-              <div className="flex items-center space-x-2 text-xs font-mono font-bold text-white uppercase mb-4">
-                <MapPin className="w-4 h-4 text-cyan-400" />
-                <span>Geographic Coordinates</span>
-              </div>
-
-              {result.lat !== undefined && result.lon !== undefined ? (
-                <div className="space-y-4">
-                  <div className="bg-[#0B0F19] border border-[#1F2937] p-4 rounded-xl text-center">
-                    <div className="text-xs text-gray-500 font-mono">LATITUDE & LONGITUDE</div>
-                    <div className="text-base font-bold font-mono text-cyan-400 mt-1">
-                      {result.lat.toFixed(4)}°, {result.lon.toFixed(4)}°
-                    </div>
-                  </div>
-
-                  {/* Simulated Map Widget */}
-                  <div className="h-44 bg-[#0B0F19] border border-[#1F2937] rounded-xl flex flex-col items-center justify-center relative overflow-hidden p-4 text-center">
-                    <div className="w-10 h-10 rounded-full bg-cyan-500/20 border border-cyan-400 flex items-center justify-center animate-bounce mb-2">
-                      <MapPin className="w-5 h-5 text-cyan-400" />
-                    </div>
-                    <p className="text-xs font-mono text-gray-300 font-bold">{result.city}, {result.country}</p>
-                    <p className="text-[10px] text-gray-500 font-mono">Approximate Regional Centroid</p>
+          {result ? (
+            <>
+              <div className="rounded-xl border border-slate-800 bg-[#0B0F19] p-4">
+                <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Estimated city / region</p>
+                <div className="mt-2 flex items-start gap-2">
+                  {flag && <span aria-label={`${result.country} flag`} className="mt-0.5 text-xl">{flag}</span>}
+                  <div className="min-w-0">
+                    <h2 className="break-words text-xl font-bold leading-tight text-white">
+                      {result.city || (result.dataOrigin === 'private_network' ? 'Private or reserved IP' : 'Location unavailable')}
+                    </h2>
+                    {(result.region || result.country) && (
+                      <p className="mt-1 break-words text-sm text-cyan-200">{[result.region, result.country].filter(Boolean).join(', ')}</p>
+                    )}
                   </div>
                 </div>
-              ) : (
-                <div className="h-48 border border-dashed border-gray-800 rounded-xl flex items-center justify-center text-xs text-gray-500">
-                  No GPS coordinates available for this address.
+              </div>
+
+              <div className="rounded-xl border border-slate-800 bg-[#0B0F19] p-3">
+                <div className="flex items-center gap-2 text-slate-500">
+                  <Wifi className="h-3.5 w-3.5" />
+                  <span className="font-mono text-[10px] uppercase tracking-wider">Network details</span>
+                </div>
+                <dl className="mt-3 space-y-2.5">
+                  <div className="flex justify-between gap-3 text-xs">
+                    <dt className="text-slate-500">IP address</dt><dd className="break-all text-right font-mono text-slate-200">{result.ip}</dd>
+                  </div>
+                  <div className="flex justify-between gap-3 text-xs">
+                    <dt className="flex shrink-0 items-center gap-1.5 text-slate-500"><Building2 className="h-3 w-3" /> ISP / org</dt><dd className="break-words text-right text-slate-200">{result.isp || 'Not provided'}</dd>
+                  </div>
+                  <div className="flex justify-between gap-3 text-xs">
+                    <dt className="text-slate-500">ASN</dt><dd className="break-words text-right font-mono text-violet-200">{result.asn || 'Not provided'}</dd>
+                  </div>
+                  <div className="flex justify-between gap-3 text-xs">
+                    <dt className="flex shrink-0 items-center gap-1.5 text-slate-500"><Clock3 className="h-3 w-3" /> Time zone</dt><dd className="break-words text-right text-slate-200">{result.timezone || 'Not provided'}</dd>
+                  </div>
+                  <div className="flex justify-between gap-3 text-xs">
+                    <dt className="text-slate-500">Status</dt><dd className={resultIsLive ? 'text-right text-emerald-300' : 'text-right text-amber-300'}>{resultIsLive ? 'Provider result' : result.dataOrigin === 'private_network' ? 'Not publicly geolocatable' : 'Invalid address'}</dd>
+                  </div>
+                </dl>
+              </div>
+
+              {resultIsLive && !hasCoordinates(result) && (
+                <div role="status" className="flex items-start gap-2 rounded-xl border border-amber-800/70 bg-amber-950/25 p-3 text-[11px] leading-relaxed text-amber-100/80">
+                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+                  Provider returned city data without valid coordinates. The map is not centered or marked for this result.
                 </div>
               )}
-            </div>
 
-            <div className="pt-4 border-t border-gray-800 text-[10px] text-gray-500 font-mono text-center">
-              Queried at: {new Date(result.timestamp).toLocaleTimeString()}
+              <p className="mt-auto flex items-start gap-2 border-t border-slate-800 pt-3 text-[10px] leading-relaxed text-slate-500">
+                <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0 text-cyan-700" />
+                Location is estimated from IP network data and may represent a city or provider region. It does not identify a person's exact physical location or provide live GPS tracking.
+              </p>
+            </>
+          ) : (
+            <div className="flex min-h-64 flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-slate-800 bg-[#0B0F19] p-5 text-center">
+              <MapPin className="h-7 w-7 text-slate-600" />
+              <h2 className="mt-3 text-sm font-semibold text-slate-300">No lookup result yet</h2>
+              <p className="mt-1 max-w-56 text-xs leading-relaxed text-slate-500">Enter an IP address to see city-level network information. Coordinates are never displayed as physical-location evidence.</p>
             </div>
-          </div>
-        </div>
-      )}
+          )}
+        </aside>
+      </section>
+
+      <p className="flex items-start gap-2 rounded-xl border border-slate-800 bg-slate-950/50 p-3 text-[10px] leading-relaxed text-slate-500">
+        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+        The highlighted circle is an approximate-area visual only, not a measured accuracy radius. Map tiles are provided by CARTO using OpenStreetMap data; usage is subject to their terms and attribution.
+      </p>
     </div>
   );
 };

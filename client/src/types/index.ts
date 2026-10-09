@@ -24,18 +24,32 @@ export interface ScanFinding {
   status: 'FAIL' | 'PASS' | 'WARNING' | 'MANUAL REVIEW REQUIRED' | 'NOT TESTED';
 }
 
+export type GeolocationDataOrigin =
+  | 'live_provider'
+  | 'private_network'
+  | 'invalid_input';
+
+export interface GeolocationProviderStatus {
+  provider: 'ipapi.co';
+  authenticationRequired: false;
+  message: string;
+}
+
 export interface GeolocationData {
   ip: string;
   version: 'IPv4' | 'IPv6' | 'Invalid';
   isValid: boolean;
   country?: string;
+  countryCode?: string;
   region?: string;
   city?: string;
   isp?: string;
   asn?: string;
+  timezone?: string;
   lat?: number;
   lon?: number;
-  source: 'local_demo_provider' | 'live_provider';
+  source: 'not_queried' | 'live_provider';
+  dataOrigin: GeolocationDataOrigin;
   timestamp: string;
   disclaimer: string;
   error?: string;
@@ -87,19 +101,4 @@ export interface OwaspScanResponse {
     remediation: string;
     docsUrl: string;
   }>;
-}
-
-export interface RateLimitScanResponse {
-  scanId: string;
-  timestamp: string;
-  targetEndpoint: string;
-  totalRequests: number;
-  successfulCount: number;
-  rateLimitedCount: number;
-  errorCount: number;
-  averageResponseTimeMs: number;
-  thresholdReached: boolean;
-  statusDistribution: Record<string, number>;
-  summary: string;
-  recommendation: string;
 }

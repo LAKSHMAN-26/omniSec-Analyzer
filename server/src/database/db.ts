@@ -29,6 +29,13 @@ if (fs.existsSync(schemaPath)) {
   console.warn('[CyberSentinel DB] schema.sql not found at standard path.');
 }
 
+const scanCheckColumns = db.pragma('table_info(scan_checks)') as Array<{ name: string }>;
+if (!scanCheckColumns.some((column) => column.name === 'wstg_references')) {
+  db.exec('ALTER TABLE scan_checks ADD COLUMN wstg_references TEXT');
+}
+db.exec("DELETE FROM application_settings WHERE key = 'rate_limit_default_max'");
+db.exec('DROP TABLE IF EXISTS bola_demo_accounts');
+
 export function logAuditEvent(eventType: string, details: string) {
   try {
     const stmt = db.prepare('INSERT INTO audit_events (timestamp, event_type, details) VALUES (?, ?, ?)');

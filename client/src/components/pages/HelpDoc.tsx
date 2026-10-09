@@ -48,12 +48,6 @@ export const HelpDoc: React.FC = () => {
               </p>
             </div>
 
-            <div className="bg-[#0B0F19] p-3 rounded-xl border border-gray-800">
-              <strong className="text-white block font-mono">4. API Rate Limiting Tester:</strong>
-              <p className="text-gray-400 mt-1">
-                Sends a burst of requests to the protected API endpoint. Shows how Express rate-limiter returns HTTP status <code className="text-rose-400 font-mono">429 Too Many Requests</code> to stop automated abuse.
-              </p>
-            </div>
           </div>
         </div>
 
@@ -75,13 +69,6 @@ export const HelpDoc: React.FC = () => {
               <span className="text-cyan-400 font-mono font-bold">Parameterized Queries:</span>
               <p className="text-gray-300 mt-1 leading-relaxed">
                 Using placeholders (<code className="text-emerald-400 font-mono">?</code>) so database engines treat input strictly as literal data, completely preventing code injection.
-              </p>
-            </div>
-
-            <div className="bg-[#0B0F19] p-3 rounded-xl border border-gray-800">
-              <span className="text-cyan-400 font-mono font-bold">Rate Limiting:</span>
-              <p className="text-gray-300 mt-1 leading-relaxed">
-                Restricting the number of allowed HTTP requests per client IP within a given time window to stop bot spam, brute force attacks, and denial of service.
               </p>
             </div>
 

@@ -62,7 +62,7 @@ realtimeScansRouter.post('/start', async (req: Request, res: Response, next) => 
     return res.status(201).json({
       status: 'started',
       jobId,
-      message: 'Educational OWASP scan launched against local lab target.'
+      message: 'Educational OWASP Top 10 and WSTG scan launched against local lab target.'
     });
   } catch (err: any) {
     // If target violation, return 403 Forbidden with exact explanation
@@ -164,7 +164,7 @@ realtimeScansRouter.get('/reports/:jobId/download', (req: Request, res: Response
   const findings = db.prepare('SELECT * FROM scan_findings WHERE scan_id = ?').all(jobId);
 
   const reportPayload = {
-    projectName: 'CyberSentinel AI — Real-Time OWASP Top 10 Security Scanner',
+    projectName: 'CyberSentinel AI — Real-Time OWASP Top 10 + WSTG Security Scanner',
     scanId: job.id,
     targetEnvironment: job.target_name,
     targetUrl: job.target_url,
@@ -194,7 +194,7 @@ realtimeScansRouter.get('/reports/:jobId/download', (req: Request, res: Response
       <html lang="en">
       <head>
         <meta charset="UTF-8">
-        <title>CyberSentinel AI - Security Assessment Report (${job.id})</title>
+        <title>CyberSentinel AI - OWASP and WSTG Assessment Report (${job.id})</title>
         <style>
           body { font-family: Inter, -apple-system, sans-serif; background: #0B1020; color: #F8FAFC; margin: 0; padding: 40px; }
           .container { max-width: 900px; margin: 0 auto; background: #111827; padding: 32px; border-radius: 12px; border: 1px solid #1F2937; }
@@ -212,7 +212,7 @@ realtimeScansRouter.get('/reports/:jobId/download', (req: Request, res: Response
       </head>
       <body>
         <div class="container">
-          <h1>🛡️ CyberSentinel AI — Security Assessment Report</h1>
+          <h1>🛡️ CyberSentinel AI — OWASP and WSTG Security Assessment</h1>
           <p><strong>Scan Job ID:</strong> ${job.id}</p>
           <p><strong>Target:</strong> ${job.target_name} (${job.target_url})</p>
           <p><strong>Status:</strong> ${job.status} | <strong>OWASP Edition:</strong> ${job.owasp_edition}</p>

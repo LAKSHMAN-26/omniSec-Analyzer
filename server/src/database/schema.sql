@@ -86,6 +86,7 @@ CREATE TABLE IF NOT EXISTS scan_checks (
     remediation TEXT,
     limitations TEXT,
     created_at TEXT NOT NULL,
+    wstg_references TEXT,
     FOREIGN KEY(scan_id) REFERENCES scan_jobs(id) ON DELETE CASCADE
 );
 
@@ -109,7 +110,6 @@ CREATE TABLE IF NOT EXISTS synthetic_products (
 
 -- Default Settings Initialization
 INSERT OR IGNORE INTO application_settings (key, value) VALUES ('owasp_edition', '2021');
-INSERT OR IGNORE INTO application_settings (key, value) VALUES ('rate_limit_default_max', '100');
 INSERT OR IGNORE INTO application_settings (key, value) VALUES ('theme', 'dark');
 INSERT OR IGNORE INTO application_settings (key, value) VALUES ('demo_mode', 'true');
 

@@ -4,11 +4,12 @@ import {
   Globe, 
   Database, 
   ShieldAlert, 
-  Gauge, 
   History, 
   FileText, 
   Settings as SettingsIcon, 
-  HelpCircle 
+  HelpCircle,
+  Network,
+  Compass
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -22,7 +23,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
     { id: 'geolocation', label: 'Geolocation Intel', icon: Globe, badge: 'Mod 1' },
     { id: 'sqlinjection', label: 'SQL Injection Tester', icon: Database, badge: 'Mod 2' },
     { id: 'owasp', label: 'OWASP Top 10', icon: ShieldAlert, badge: 'Mod 3' },
-    { id: 'ratelimit', label: 'API Rate Limit Tester', icon: Gauge, badge: 'Mod 4' },
+    { id: 'identitypaths', label: 'Identity Attack Paths', icon: Network, badge: 'Demo' },
+    { id: 'osint', label: 'OSINT Explorer', icon: Compass, badge: 'Learn' },
     { id: 'history', label: 'Scan History', icon: History },
     { id: 'reports', label: 'Reports', icon: FileText },
     { id: 'settings', label: 'Settings', icon: SettingsIcon },

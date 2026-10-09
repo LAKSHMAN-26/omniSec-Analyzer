@@ -1,6 +1,23 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import request from 'supertest';
 import { app } from '../src/app.js';
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+function stubIpapiResponse(overrides: Record<string, unknown> = {}) {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+    city: 'Mountain View',
+    region: 'California',
+    country_name: 'United States',
+    latitude: 37.42301,
+    longitude: -122.083352,
+    org: 'Google LLC',
+    asn: 'AS15169',
+    ...overrides
+  }), { status: 200, headers: { 'Content-Type': 'application/json' } })));
+}
 
 // ============================================================
 // CyberSentinel AI - Automated API Test Suite (Vitest + Supertest)
@@ -18,6 +35,7 @@ describe('GET /api/health', () => {
 
 describe('GET /api/geolocation/:ip - IP Validation Tests', () => {
   it('should accept and resolve a valid IPv4 address', async () => {
+    stubIpapiResponse();
     const res = await request(app).get('/api/geolocation/8.8.8.8');
     expect(res.status).toBe(200);
     expect(res.body.ip).toBe('8.8.8.8');
@@ -27,7 +45,16 @@ describe('GET /api/geolocation/:ip - IP Validation Tests', () => {
     expect(res.body.disclaimer).toBeTruthy();
   });
 
+  it('should advertise keyless live provider access', async () => {
+    const res = await request(app).get('/api/geolocation/provider-status');
+    expect(res.status).toBe(200);
+    expect(res.body.provider).toBe('ipapi.co');
+    expect(res.body.authenticationRequired).toBe(false);
+    expect(res.body.message).toContain('without an API key');
+  });
+
   it('should accept and resolve a valid IPv6 address', async () => {
+    stubIpapiResponse();
     const res = await request(app).get('/api/geolocation/2001%3A4860%3A4860%3A%3A8888');
     expect(res.status).toBe(200);
     expect(res.body.version).toBe('IPv6');
@@ -45,9 +72,12 @@ describe('GET /api/geolocation/:ip - IP Validation Tests', () => {
     const res = await request(app).get('/api/geolocation/127.0.0.1');
     expect(res.status).toBe(200);
     expect(res.body.country).toContain('Private');
+    expect(res.body.source).toBe('not_queried');
+    expect(res.body.dataOrigin).toBe('private_network');
   });
 
   it('should handle IPv4 address 1.1.1.1 (Cloudflare) correctly', async () => {
+    stubIpapiResponse({ org: 'Cloudflare Inc', asn: 'AS13335' });
     const res = await request(app).get('/api/geolocation/1.1.1.1');
     expect(res.status).toBe(200);
     expect(res.body.isp).toContain('Cloudflare');
@@ -132,35 +162,6 @@ describe('POST /api/scans/owasp/scan - OWASP Assessment Tests', () => {
     for (const cat of res.body.categories) {
       expect(cat.docsUrl).toContain('owasp.org');
     }
-  });
-});
-
-describe('POST /api/scans/rate-limit/scan - Rate Limit Tests', () => {
-  it('should confirm rate limiter activates on protected endpoint', async () => {
-    const res = await request(app)
-      .post('/api/scans/rate-limit/scan')
-      .send({ targetEndpoint: 'protected', requestLimit: 40 });
-    expect(res.status).toBe(200);
-    expect(res.body.thresholdReached).toBe(true);
-    expect(res.body.rateLimitedCount).toBeGreaterThan(0);
-    expect(res.body.successfulCount).toBe(20); // threshold is 20
-  });
-
-  it('should show no throttling on unprotected endpoint', async () => {
-    const res = await request(app)
-      .post('/api/scans/rate-limit/scan')
-      .send({ targetEndpoint: 'unprotected', requestLimit: 30 });
-    expect(res.status).toBe(200);
-    expect(res.body.thresholdReached).toBe(false);
-    expect(res.body.successfulCount).toBe(30); // all succeed
-    expect(res.body.rateLimitedCount).toBe(0);
-  });
-
-  it('should reject request limits exceeding 100', async () => {
-    const res = await request(app)
-      .post('/api/scans/rate-limit/scan')
-      .send({ targetEndpoint: 'protected', requestLimit: 999 });
-    expect(res.status).toBe(400);
   });
 });
 

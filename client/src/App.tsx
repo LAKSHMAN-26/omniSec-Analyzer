@@ -5,11 +5,12 @@ import { Overview } from './components/pages/Overview';
 import { Geolocation } from './components/pages/Geolocation';
 import { SqlInjection } from './components/pages/SqlInjection';
 import { OwaspAssessment } from './components/pages/OwaspAssessment';
-import { RateLimiter } from './components/pages/RateLimiter';
 import { ScanHistoryPage } from './components/pages/ScanHistory';
 import { ReportViewer } from './components/pages/ReportViewer';
 import { Settings } from './components/pages/Settings';
 import { HelpDoc } from './components/pages/HelpDoc';
+import { IdentityAttackPathExplorer } from './components/pages/IdentityAttackPathExplorer';
+import { OsintUniverse } from './components/pages/OsintUniverse';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<string>('overview');
@@ -24,8 +25,10 @@ export function App() {
         return <SqlInjection />;
       case 'owasp':
         return <OwaspAssessment />;
-      case 'ratelimit':
-        return <RateLimiter />;
+      case 'identitypaths':
+        return <IdentityAttackPathExplorer />;
+      case 'osint':
+        return <OsintUniverse onBackToDashboard={() => setActiveTab('overview')} />;
       case 'history':
         return <ScanHistoryPage />;
       case 'reports':

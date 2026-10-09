@@ -9,6 +9,7 @@ export interface CheckDefinition {
   checkName: string;
   endpoint: string;
   method: string;
+  wstgReferences?: Array<{ id: string; url: string }>;
   run: (baseUrl: string, targetType: 'vulnerable' | 'secure') => Promise<{
     status: 'PASS' | 'FINDING' | 'WARNING' | 'MANUAL REVIEW REQUIRED' | 'NOT TESTED' | 'INCONCLUSIVE';
     severity: 'Critical' | 'High' | 'Medium' | 'Low' | 'Informational' | 'None';
@@ -76,15 +77,21 @@ function makeLocalRequest(
   });
 }
 
-// OWASP Top 10 Check Definitions tailored to local lab testing
+// OWASP Top 10 and WSTG check definitions tailored to local lab testing
 export const owaspChecksList: CheckDefinition[] = [
   // 1. A01: Broken Access Control
   {
     categoryId: 'A01:2021',
     categoryName: 'Broken Access Control',
-    checkName: 'Unauthenticated BOLA/IDOR Object Access Verification',
+    checkName: 'Unauthenticated Object Access Verification',
     endpoint: '/users/2',
     method: 'GET',
+    wstgReferences: [
+      {
+        id: 'WSTG-ATHZ-04',
+        url: 'https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/05-Authorization/04-Insecure_Direct_Object_References/'
+      }
+    ],
     run: async (baseUrl, targetType) => {
       const url = `${baseUrl}/users/2`;
       try {
@@ -561,7 +568,7 @@ export interface ScanJobEvent {
 }
 
 /**
- * Initiates an educational OWASP Top 10 real-time scan against a validated local lab target.
+ * Initiates an educational OWASP Top 10 and WSTG scan against a validated local lab target.
  */
 export async function executeRealtimeScan(
   targetId: string,
@@ -612,7 +619,7 @@ export async function executeRealtimeScan(
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     jobId,
-    `OWASP Top 10 (${owaspEdition}) - Real-Time Scanner`,
+    `OWASP Top 10 + WSTG (${owaspEdition}) - Real-Time Scanner`,
     target.name,
     startTime,
     null,
@@ -662,8 +669,8 @@ async function runChecksLoop(
   const insertCheck = db.prepare(`
     INSERT INTO scan_checks (
       id, scan_id, category_id, category_name, check_name, target_endpoint, http_method,
-      status, severity, confidence, evidence, remediation, limitations, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      status, severity, confidence, evidence, remediation, limitations, created_at, wstg_references
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const insertFinding = db.prepare(`
@@ -764,7 +771,8 @@ async function runChecksLoop(
       result.evidence,
       result.remediation,
       result.limitations,
-      new Date().toISOString()
+      new Date().toISOString(),
+      check.wstgReferences ? JSON.stringify(check.wstgReferences) : null
     );
 
     // If finding or warning, record in scan_findings
@@ -806,7 +814,8 @@ async function runChecksLoop(
           confidence: result.confidence,
           evidence: result.evidence,
           remediation: result.remediation,
-          limitations: result.limitations
+          limitations: result.limitations,
+          wstgReferences: check.wstgReferences || []
         }
       });
     }
@@ -814,7 +823,7 @@ async function runChecksLoop(
 
   // Scan Completed
   const completionTime = new Date().toISOString();
-  const summary = `Educational OWASP Top 10 assessment completed for ${target.name}. Results: ${passedCount} Passed, ${findingsCount} Findings, ${warningsCount} Warnings, ${manualReviewCount} Manual Review.`;
+  const summary = `Educational OWASP Top 10 and WSTG assessment completed for ${target.name}. Results: ${passedCount} Passed, ${findingsCount} Findings, ${warningsCount} Warnings, ${manualReviewCount} Manual Review.`;
 
   db.prepare(`
     UPDATE scan_jobs
@@ -830,7 +839,7 @@ async function runChecksLoop(
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     jobId,
-    `OWASP Top 10 (${owaspEdition}) - Real-Time Scanner`,
+    `OWASP Top 10 + WSTG (${owaspEdition}) - Real-Time Scanner`,
     target.name,
     new Date().toISOString(),
     completionTime,

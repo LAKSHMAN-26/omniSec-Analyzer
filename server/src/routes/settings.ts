@@ -6,7 +6,6 @@ const router = Router();
 
 const updateSettingsSchema = z.object({
   owasp_edition: z.string().optional(),
-  rate_limit_default_max: z.string().optional(),
   theme: z.string().optional(),
   demo_mode: z.string().optional()
 });

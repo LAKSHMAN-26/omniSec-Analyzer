@@ -11,7 +11,6 @@ import {
   Globe, 
   Database, 
   ShieldAlert, 
-  Gauge, 
   ArrowRight,
   RefreshCw
 } from 'lucide-react';
@@ -173,24 +172,6 @@ export const Overview: React.FC<OverviewProps> = ({ setActiveTab }) => {
             </button>
           </div>
 
-          <div className="bg-[#111827] border border-[#1F2937] p-5 rounded-2xl hover:border-emerald-500/50 transition-all flex flex-col justify-between group">
-            <div>
-              <div className="w-10 h-10 rounded-xl bg-emerald-950 text-emerald-400 border border-emerald-800 flex items-center justify-center mb-3">
-                <Gauge className="w-5 h-5" />
-              </div>
-              <h3 className="font-bold text-white text-base">API Rate Limiter</h3>
-              <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                Test request rate limits, verify HTTP 429 throttling response behaviors safely.
-              </p>
-            </div>
-            <button
-              onClick={() => setActiveTab('ratelimit')}
-              className="mt-4 flex items-center justify-between text-xs font-mono text-emerald-400 group-hover:text-emerald-300 font-semibold pt-3 border-t border-gray-800"
-            >
-              <span>Launch Module</span>
-              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-            </button>
-          </div>
         </div>
       </div>
 
