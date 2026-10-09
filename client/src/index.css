@@ -1,0 +1,50 @@
+/* Tailwind CSS v4 - uses @import "tailwindcss" instead of @tailwind directives */
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+/* Design Token Theme */
+@theme {
+  --color-darkBg: #0B0F19;
+  --color-panelBg: #111827;
+  --color-panelBorder: #1F2937;
+  --color-cyberCyan: #06B6D4;
+  --color-cyberViolet: #8B5CF6;
+  --color-cyberGreen: #10B981;
+  --color-cyberAmber: #F59E0B;
+  --color-cyberRed: #EF4444;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+/* Base styles */
+body {
+  background-color: #0B0F19;
+  color: #F3F4F6;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+::selection {
+  background-color: #06B6D4;
+  color: #000;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0B0F19;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1F2937;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #374151;
+}
