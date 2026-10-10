@@ -26,10 +26,15 @@ export interface GeolocationResult {
   country?: string;
   region?: string;
   city?: string;
+  village?: string;
+  town?: string;
+  district?: string;
   countryCode?: string;
   isp?: string;
   asn?: string;
+  connectionType?: string;
   timezone?: string;
+  postalCode?: string;
   lat?: number;
   lon?: number;
   source: GeolocationSource;
@@ -221,10 +226,16 @@ export async function lookupIpGeolocation(ipAddress: string): Promise<Geolocatio
     );
   }
 
-  const latitude = typeof data.latitude === 'number' ? data.latitude : Number(data.latitude);
-  const longitude = typeof data.longitude === 'number' ? data.longitude : Number(data.longitude);
-  const hasValidCoordinates = Number.isFinite(latitude) && latitude >= -90 && latitude <= 90 &&
-    Number.isFinite(longitude) && longitude >= -180 && longitude <= 180;
+  const numericField = (value: unknown): number | undefined => {
+    if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
+    if (typeof value !== 'string' || !value.trim()) return undefined;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  };
+  const latitude = numericField(data.latitude);
+  const longitude = numericField(data.longitude);
+  const hasValidCoordinates = typeof latitude === 'number' && latitude >= -90 && latitude <= 90 &&
+    typeof longitude === 'number' && longitude >= -180 && longitude <= 180;
   const countryCode = typeof data.country_code === 'string' && /^[a-z]{2}$/i.test(data.country_code)
     ? data.country_code.toUpperCase()
     : undefined;
@@ -239,8 +250,13 @@ export async function lookupIpGeolocation(ipAddress: string): Promise<Geolocatio
     countryCode,
     region: textField(data.region),
     city: textField(data.city),
+    village: textField(data.village),
+    town: textField(data.town),
+    district: textField(data.district),
+    postalCode: textField(data.postal),
     isp: textField(data.org) ?? textField(data.asn),
     asn: textField(data.asn),
+    connectionType: textField(data.connection_type),
     timezone: textField(data.timezone),
     ...(hasValidCoordinates ? { lat: latitude, lon: longitude } : {}),
     source: 'live_provider',

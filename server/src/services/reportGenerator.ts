@@ -31,7 +31,9 @@ export function generateScanReportJson(scanId: string) {
       metrics: {
         findingsCount: scan.findings_count,
         warningsCount: scan.warnings_count,
-        passedCount: scan.passed_count
+        passedCount: scan.passed_count,
+        errorsCount: scan.errors_count || 0,
+        untestedCount: scan.untested_count || 0
       }
     },
     findings: findings.map(f => ({

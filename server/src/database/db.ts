@@ -33,6 +33,29 @@ const scanCheckColumns = db.pragma('table_info(scan_checks)') as Array<{ name: s
 if (!scanCheckColumns.some((column) => column.name === 'wstg_references')) {
   db.exec('ALTER TABLE scan_checks ADD COLUMN wstg_references TEXT');
 }
+if (!scanCheckColumns.some((column) => column.name === 'explanation')) {
+  db.exec('ALTER TABLE scan_checks ADD COLUMN explanation TEXT');
+}
+if (!scanCheckColumns.some((column) => column.name === 'duration_ms')) {
+  db.exec('ALTER TABLE scan_checks ADD COLUMN duration_ms INTEGER DEFAULT 0');
+}
+
+const scanJobColumns = db.pragma('table_info(scan_jobs)') as Array<{ name: string }>;
+if (!scanJobColumns.some((column) => column.name === 'errors_count')) {
+  db.exec('ALTER TABLE scan_jobs ADD COLUMN errors_count INTEGER DEFAULT 0');
+}
+if (!scanJobColumns.some((column) => column.name === 'untested_count')) {
+  db.exec('ALTER TABLE scan_jobs ADD COLUMN untested_count INTEGER DEFAULT 0');
+}
+
+const scanHistoryColumns = db.pragma('table_info(scan_history)') as Array<{ name: string }>;
+if (!scanHistoryColumns.some((column) => column.name === 'errors_count')) {
+  db.exec('ALTER TABLE scan_history ADD COLUMN errors_count INTEGER DEFAULT 0');
+}
+if (!scanHistoryColumns.some((column) => column.name === 'untested_count')) {
+  db.exec('ALTER TABLE scan_history ADD COLUMN untested_count INTEGER DEFAULT 0');
+}
+
 db.exec("DELETE FROM application_settings WHERE key = 'rate_limit_default_max'");
 db.exec('DROP TABLE IF EXISTS bola_demo_accounts');
 

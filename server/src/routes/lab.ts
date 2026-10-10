@@ -186,6 +186,41 @@ labRouter.get('/vulnerable/fetch-url', (req: Request, res: Response) => {
   });
 });
 
+// A05: Directory Listing / Indexing Misconfiguration Demo
+labRouter.get('/vulnerable/directory-listing', (req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'text/html');
+  return res.status(200).send(`
+    <!DOCTYPE html>
+    <html>
+      <head><title>Index of /files/</title></head>
+      <body>
+        <h1>Index of /files/</h1>
+        <hr>
+        <pre>
+<a href="../">../</a>
+<a href="database.sqlite">database.sqlite</a>    2026-10-10 12:00  4.2M
+<a href="secret_backup.zip">secret_backup.zip</a>  2026-10-10 12:05  12.8M
+        </pre>
+        <hr>
+      </body>
+    </html>
+  `);
+});
+
+// Demo endpoint with no cookies returned
+labRouter.get('/vulnerable/nocookies', (req: Request, res: Response) => {
+  return res.status(200).json({
+    status: 'success',
+    mode: 'vulnerable',
+    message: 'Endpoint does not set cookies.'
+  });
+});
+
+// Demo endpoint redirecting to blocked cloud metadata (for testing redirect boundary enforcement)
+labRouter.get('/vulnerable/redirect-to-meta', (req: Request, res: Response) => {
+  return res.redirect(302, 'http://169.254.169.254/latest/meta-data/');
+});
+
 
 // =========================================================================
 // B. SECURE DEMO APPLICATION (/api/lab/secure/*)
@@ -372,4 +407,27 @@ labRouter.get('/secure/fetch-url', (req: Request, res: Response) => {
     mode: 'secure',
     message: 'Target verified against educational lab allowlist.'
   });
+});
+
+// A05: Secure Directory Listing (Indexing Disabled)
+labRouter.get('/secure/directory-listing', (req: Request, res: Response) => {
+  return res.status(403).json({
+    status: 'error',
+    mode: 'secure',
+    error: 'Directory indexing is disabled. Access denied.'
+  });
+});
+
+// Demo secure endpoint with no cookies returned
+labRouter.get('/secure/nocookies', (req: Request, res: Response) => {
+  return res.status(200).json({
+    status: 'success',
+    mode: 'secure',
+    message: 'Endpoint does not set cookies.'
+  });
+});
+
+// Safe redirect test endpoint
+labRouter.get('/secure/redirect-safe', (req: Request, res: Response) => {
+  return res.redirect(302, '/api/lab/secure/headers');
 });

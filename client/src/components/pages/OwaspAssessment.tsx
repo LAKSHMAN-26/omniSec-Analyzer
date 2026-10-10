@@ -19,7 +19,9 @@ import {
   Search, 
   ShieldCheck, 
   ShieldX, 
-  Info 
+  Info,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 interface RealtimeCheck {
@@ -32,12 +34,17 @@ interface RealtimeCheck {
   checkName?: string;
   target_endpoint?: string;
   endpoint?: string;
-  status: 'PASS' | 'FINDING' | 'WARNING' | 'MANUAL REVIEW REQUIRED' | 'NOT TESTED' | 'INCONCLUSIVE';
+  status: 'PASS' | 'FAIL' | 'FINDING' | 'WARNING' | 'MANUAL REVIEW REQUIRED' | 'NOT_TESTED' | 'NOT TESTED' | 'ERROR' | 'INCONCLUSIVE';
   severity: 'Critical' | 'High' | 'Medium' | 'Low' | 'Informational' | 'None';
   confidence: 'High' | 'Medium' | 'Low';
   evidence: string;
+  explanation?: string;
   remediation: string;
   limitations: string;
+  durationMs?: number;
+  duration_ms?: number;
+  timestamp?: string;
+  created_at?: string;
   wstgReferences?: Array<{ id: string; url: string }>;
 }
 
@@ -85,7 +92,10 @@ export const OwaspAssessment: React.FC = () => {
   const [findingsCount, setFindingsCount] = useState<number>(0);
   const [warningsCount, setWarningsCount] = useState<number>(0);
   const [passedCount, setPassedCount] = useState<number>(0);
+  const [errorsCount, setErrorsCount] = useState<number>(0);
+  const [untestedCount, setUntestedCount] = useState<number>(0);
   const [manualReviewCount, setManualReviewCount] = useState<number>(0);
+  const [expandedCheckIds, setExpandedCheckIds] = useState<Record<string, boolean>>({});
 
   const [checks, setChecks] = useState<RealtimeCheck[]>([]);
   const [summary, setSummary] = useState<string>('');
@@ -166,6 +176,8 @@ export const OwaspAssessment: React.FC = () => {
     setFindingsCount(0);
     setWarningsCount(0);
     setPassedCount(0);
+    setErrorsCount(0);
+    setUntestedCount(0);
     setManualReviewCount(0);
     setSummary('');
     setCurrentTestName('Initializing local educational target...');
@@ -197,9 +209,11 @@ export const OwaspAssessment: React.FC = () => {
         setChecks((prev) => [...prev, checkData]);
         setCompletedCount((prev) => prev + 1);
 
-        if (checkData.status === 'FINDING') setFindingsCount((prev) => prev + 1);
+        if (checkData.status === 'FINDING' || checkData.status === 'FAIL') setFindingsCount((prev) => prev + 1);
         else if (checkData.status === 'WARNING') setWarningsCount((prev) => prev + 1);
         else if (checkData.status === 'PASS') setPassedCount((prev) => prev + 1);
+        else if (checkData.status === 'ERROR' || checkData.status === 'INCONCLUSIVE') setErrorsCount((prev) => prev + 1);
+        else if (checkData.status === 'NOT_TESTED' || checkData.status === 'NOT TESTED') setUntestedCount((prev) => prev + 1);
         else if (checkData.status === 'MANUAL REVIEW REQUIRED') setManualReviewCount((prev) => prev + 1);
       });
 
@@ -254,7 +268,7 @@ export const OwaspAssessment: React.FC = () => {
           </div>
           <div>
             <h1 className="text-xl font-bold text-white font-sans">
-              CyberSentinel AI — Real-Time OWASP Top 10 + WSTG Scanner
+              Omnisec Analyzer — Real-Time OWASP Top 10 + WSTG Scanner
             </h1>
             <p className="text-xs text-cyan-400 font-mono">
               Passive URL Safety Analyzer & Loopback Educational Lab Audit
@@ -405,9 +419,15 @@ export const OwaspAssessment: React.FC = () => {
                 </button>
               </div>
               {selectedTarget && (
-                <p className="text-[11px] font-mono text-gray-500 mt-1.5 truncate">
-                  Target: <span className="text-cyan-400">{selectedTarget.base_url}</span> (127.0.0.1)
-                </p>
+                <div className="mt-2 space-y-1 text-[11px] font-mono">
+                  <p className="text-gray-400 truncate">
+                    Target: <span className="text-cyan-300 font-semibold">{selectedTarget.name}</span> (<span className="text-cyan-400">{selectedTarget.base_url}</span>)
+                  </p>
+                  <p className="text-emerald-400 flex items-center space-x-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 inline" />
+                    <span>Authorization Status: Registered & Authorized Lab Target (127.0.0.1 Scope Enforced)</span>
+                  </p>
+                </div>
               )}
             </div>
 
@@ -514,7 +534,7 @@ export const OwaspAssessment: React.FC = () => {
                 </div>
               )}
               <div>
-                <span className="text-[10px] font-mono text-gray-500 uppercase">URL Safety Verdict</span>
+                <span className="text-[10px] font-mono text-gray-500 uppercase">Passive URL Syntax Verdict</span>
                 <div className="flex items-center space-x-2">
                   <h2 className="text-base font-bold font-mono text-white">
                     {urlResult.verdict}
@@ -530,7 +550,7 @@ export const OwaspAssessment: React.FC = () => {
                 urlResult.verdict === 'BLOCKED' ? 'bg-rose-950 text-rose-300 border-rose-800' :
                 'bg-violet-950 text-violet-300 border-violet-800'
               }`}>
-                {urlResult.verdict === 'VALIDATION PASSED' ? 'Syntax Passed' :
+                {urlResult.verdict === 'VALIDATION PASSED' ? 'No Syntax Issues Detected' :
                  urlResult.verdict === 'SUSPICIOUS' ? 'Suspicious Indicators' :
                  urlResult.verdict === 'BLOCKED' ? 'Prohibited / Blocked Target' :
                  'Unverified Format'}
@@ -670,11 +690,15 @@ export const OwaspAssessment: React.FC = () => {
               )}
             </div>
 
-            <div className="flex items-center space-x-4 text-xs font-mono">
-              <span className="text-emerald-400 font-bold">{passedCount} Passed</span>
-              <span className="text-red-400 font-bold">{findingsCount} Findings</span>
-              <span className="text-amber-400 font-bold">{warningsCount} Warnings</span>
-              <span className="text-violet-400 font-bold">{manualReviewCount} Manual Review</span>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-mono">
+              <span className="text-emerald-400 font-bold bg-emerald-950/40 border border-emerald-800/40 px-2.5 py-1 rounded-lg">{passedCount} Passed</span>
+              <span className="text-red-400 font-bold bg-rose-950/40 border border-rose-800/40 px-2.5 py-1 rounded-lg">{findingsCount} Failed / Findings</span>
+              <span className="text-amber-400 font-bold bg-amber-950/40 border border-amber-800/40 px-2.5 py-1 rounded-lg">{warningsCount} Warnings</span>
+              <span className="text-rose-300 font-bold bg-gray-800/60 border border-gray-700 px-2.5 py-1 rounded-lg">{errorsCount} Errors</span>
+              <span className="text-violet-400 font-bold bg-violet-950/40 border border-violet-800/40 px-2.5 py-1 rounded-lg">{untestedCount} Untested</span>
+              {manualReviewCount > 0 && (
+                <span className="text-violet-300 font-bold bg-violet-950/40 border border-violet-800/40 px-2.5 py-1 rounded-lg">{manualReviewCount} Manual Review</span>
+              )}
             </div>
           </div>
 
@@ -702,12 +726,12 @@ export const OwaspAssessment: React.FC = () => {
 
       {/* SECTION 5: ASSESSMENT CARDS GRID */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <h2 className="text-sm font-mono font-bold uppercase tracking-wider text-gray-400">
             OWASP Top 10 & WSTG Assessment Checks ({checks.length} checks logged)
           </h2>
           <span className="text-xs font-mono text-gray-500">
-            Target: {selectedTarget ? selectedTarget.name : 'Local Lab'}
+            Target: <span className="text-cyan-300">{selectedTarget ? selectedTarget.name : 'Local Lab'}</span>
           </span>
         </div>
 
@@ -721,25 +745,37 @@ export const OwaspAssessment: React.FC = () => {
 
         <div className="grid grid-cols-1 gap-4">
           {checks.map((check, idx) => {
+            const checkKey = check.id || `check-${idx}`;
+            const isExpanded = expandedCheckIds[checkKey] ?? true;
             const catId = check.categoryId || check.category_id || `A0${idx + 1}:2021`;
             const catName = check.categoryName || check.category_name || 'Category';
             const checkTitle = check.checkName || check.check_name || 'Check';
             const endpoint = check.endpoint || check.target_endpoint || '';
+            const duration = check.durationMs ?? check.duration_ms;
+
+            const isPass = check.status === 'PASS';
+            const isFail = check.status === 'FAIL' || check.status === 'FINDING';
+            const isWarn = check.status === 'WARNING';
+            const isUntested = check.status === 'NOT_TESTED' || check.status === 'NOT TESTED';
+            const isError = check.status === 'ERROR' || check.status === 'INCONCLUSIVE';
 
             return (
               <div 
-                key={check.id || idx}
+                key={checkKey}
                 className="bg-[#111827] border border-[#1F2937] hover:border-[#374151] rounded-2xl p-5 transition-all space-y-4"
               >
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1F2937] pb-3">
                   <div className="flex items-start space-x-3">
                     <div className="mt-0.5">
-                      {check.status === 'PASS' && <CheckCircle2 className="w-5 h-5 text-emerald-400" />}
-                      {check.status === 'FINDING' && <XCircle className="w-5 h-5 text-red-400" />}
-                      {check.status === 'WARNING' && <AlertTriangle className="w-5 h-5 text-amber-400" />}
-                      {check.status === 'MANUAL REVIEW REQUIRED' && <HelpCircle className="w-5 h-5 text-violet-400" />}
-                      {check.status === 'INCONCLUSIVE' && <Clock className="w-5 h-5 text-gray-400" />}
+                      {isPass && <CheckCircle2 className="w-5 h-5 text-emerald-400" />}
+                      {isFail && <XCircle className="w-5 h-5 text-red-400" />}
+                      {isWarn && <AlertTriangle className="w-5 h-5 text-amber-400" />}
+                      {isUntested && <HelpCircle className="w-5 h-5 text-violet-400" />}
+                      {isError && <Clock className="w-5 h-5 text-rose-400" />}
+                      {!isPass && !isFail && !isWarn && !isUntested && !isError && (
+                        <HelpCircle className="w-5 h-5 text-gray-400" />
+                      )}
                     </div>
                     <div>
                       <div className="flex items-center space-x-2">
@@ -750,9 +786,14 @@ export const OwaspAssessment: React.FC = () => {
                           {catName}
                         </h3>
                       </div>
-                      <p className="text-xs text-gray-300 font-mono mt-1">
+                      <p className="text-xs text-gray-300 font-mono mt-1 font-semibold">
                         {checkTitle}
                       </p>
+                      {check.explanation && (
+                        <p className="text-xs text-gray-400 font-sans mt-1 leading-relaxed">
+                          {check.explanation}
+                        </p>
+                      )}
                       {check.wstgReferences && check.wstgReferences.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-2">
                           {check.wstgReferences.map((reference) => (
@@ -771,13 +812,14 @@ export const OwaspAssessment: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Badges */}
-                  <div className="flex items-center space-x-2">
+                  {/* Badges and Toggle */}
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className={`text-[11px] font-mono font-bold px-2.5 py-1 rounded-full border ${
-                      check.status === 'PASS' ? 'bg-emerald-950 text-emerald-300 border-emerald-800' :
-                      check.status === 'FINDING' ? 'bg-red-950 text-red-300 border-red-800' :
-                      check.status === 'WARNING' ? 'bg-amber-950 text-amber-300 border-amber-800' :
-                      check.status === 'MANUAL REVIEW REQUIRED' ? 'bg-violet-950 text-violet-300 border-violet-800' :
+                      isPass ? 'bg-emerald-950 text-emerald-300 border-emerald-800' :
+                      isFail ? 'bg-red-950 text-red-300 border-red-800' :
+                      isWarn ? 'bg-amber-950 text-amber-300 border-amber-800' :
+                      isUntested ? 'bg-violet-950 text-violet-300 border-violet-800' :
+                      isError ? 'bg-rose-950 text-rose-300 border-rose-800' :
                       'bg-gray-800 text-gray-300 border-gray-700'
                     }`}>
                       {check.status}
@@ -787,45 +829,71 @@ export const OwaspAssessment: React.FC = () => {
                       <RiskBadge statusOrSeverity={check.severity} size="sm" />
                     )}
 
-                    <span className="text-[10px] font-mono text-gray-400 bg-[#0B0F19] px-2 py-1 rounded border border-[#1F2937]">
-                      Conf: {check.confidence}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Evidence & Details */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-sans">
-                  <div className="space-y-1">
-                    <span className="font-mono text-gray-400 text-[11px] uppercase font-bold">Tested Endpoint & Evidence:</span>
-                    {endpoint && (
-                      <p className="font-mono text-gray-400 text-[11px]">
-                        Target: <code className="text-cyan-300">{endpoint}</code>
-                      </p>
+                    {duration !== undefined && (
+                      <span className="text-[10px] font-mono text-cyan-400 bg-[#0B0F19] px-2 py-1 rounded border border-[#1F2937]">
+                        {duration}ms
+                      </span>
                     )}
-                    <pre className="bg-[#0B0F19] border border-[#1F2937] p-3 rounded-xl font-mono text-[11px] text-cyan-200/90 whitespace-pre-wrap overflow-x-auto leading-relaxed">
-                      {check.evidence || 'No technical evidence required for this check.'}
-                    </pre>
-                  </div>
 
-                  <div className="space-y-2">
-                    <div>
-                      <span className="font-mono text-emerald-400 text-[11px] uppercase font-bold">Remediation Guidance:</span>
-                      <p className="text-gray-300 leading-relaxed mt-0.5 bg-[#0B0F19] p-2.5 rounded-xl border border-[#1F2937]">
-                        {check.remediation}
-                      </p>
-                    </div>
-
-                    <div>
-                      <span className="font-mono text-gray-500 text-[11px] uppercase font-bold">Test Limitations:</span>
-                      <p className="text-gray-400 leading-relaxed mt-0.5 italic text-[11px]">
-                        {check.limitations}
-                      </p>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setExpandedCheckIds((prev) => ({ ...prev, [checkKey]: !isExpanded }))}
+                      className="text-gray-400 hover:text-gray-200 p-1 rounded-lg hover:bg-[#1F2937] transition-colors"
+                      title={isExpanded ? 'Hide Technical Evidence' : 'Show Technical Evidence'}
+                    >
+                      {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
                   </div>
                 </div>
+
+                {/* Evidence & Details (Collapsible) */}
+                {isExpanded && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-sans pt-1">
+                    <div className="space-y-1">
+                      <span className="font-mono text-gray-400 text-[11px] uppercase font-bold">Tested Endpoint & Observable Evidence:</span>
+                      {endpoint && (
+                        <p className="font-mono text-gray-400 text-[11px]">
+                          Target Endpoint: <code className="text-cyan-300">{endpoint}</code>
+                        </p>
+                      )}
+                      <pre className="bg-[#0B0F19] border border-[#1F2937] p-3 rounded-xl font-mono text-[11px] text-cyan-200/90 whitespace-pre-wrap overflow-x-auto leading-relaxed max-h-48">
+                        {check.evidence || 'No technical evidence recorded for this check.'}
+                      </pre>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div>
+                        <span className="font-mono text-emerald-400 text-[11px] uppercase font-bold">Remediation Guidance:</span>
+                        <p className="text-gray-300 leading-relaxed mt-0.5 bg-[#0B0F19] p-2.5 rounded-xl border border-[#1F2937]">
+                          {check.remediation || 'Follow OWASP defensive coding recommendations.'}
+                        </p>
+                      </div>
+
+                      {check.limitations && (
+                        <div>
+                          <span className="font-mono text-gray-500 text-[11px] uppercase font-bold">Test Limitations:</span>
+                          <p className="text-gray-400 leading-relaxed mt-0.5 italic text-[11px]">
+                            {check.limitations}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
+        </div>
+
+        {/* Global Assessment Scope Disclaimer Banner */}
+        <div className="p-4 bg-amber-950/20 border border-amber-800/40 rounded-2xl text-xs flex items-start space-x-3 mt-6">
+          <AlertTriangle className="w-5 h-5 text-amber-400 mt-0.5 shrink-0" />
+          <div className="space-y-1">
+            <strong className="text-amber-300 font-mono text-xs uppercase block">Automated Scanning Scope Limitation</strong>
+            <p className="text-gray-300 leading-relaxed">
+              Automated security testing evaluates specific observable indicators under test conditions and cannot guarantee the absence of vulnerabilities. Comprehensive cybersecurity posture requires thorough manual code audits, threat modeling, and authorized penetration testing.
+            </p>
+          </div>
         </div>
       </div>
     </div>

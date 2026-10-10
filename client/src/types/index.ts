@@ -8,6 +8,8 @@ export interface ScanHistoryItem {
   findings_count: number;
   warnings_count: number;
   passed_count: number;
+  errors_count?: number;
+  untested_count?: number;
   summary: string;
 }
 
@@ -21,13 +23,14 @@ export interface ScanFinding {
   evidence: string;
   risk_explanation: string;
   remediation: string;
-  status: 'FAIL' | 'PASS' | 'WARNING' | 'MANUAL REVIEW REQUIRED' | 'NOT TESTED';
+  status: 'FAIL' | 'PASS' | 'WARNING' | 'MANUAL REVIEW REQUIRED' | 'NOT TESTED' | 'ERROR';
 }
 
 export type GeolocationDataOrigin =
   | 'live_provider'
   | 'private_network'
-  | 'invalid_input';
+  | 'invalid_input'
+  | 'demo_data';
 
 export interface GeolocationProviderStatus {
   provider: 'ipapi.co';
@@ -43,16 +46,22 @@ export interface GeolocationData {
   countryCode?: string;
   region?: string;
   city?: string;
+  village?: string;
+  town?: string;
+  district?: string;
+  postalCode?: string;
   isp?: string;
   asn?: string;
+  connectionType?: string;
   timezone?: string;
-  lat?: number;
-  lon?: number;
-  source: 'not_queried' | 'live_provider';
+  lat?: number | string;
+  lon?: number | string;
+  source: 'not_queried' | 'live_provider' | 'demo_data';
   dataOrigin: GeolocationDataOrigin;
   timestamp: string;
   disclaimer: string;
   error?: string;
+  isDemoData?: boolean;
 }
 
 export interface SqlScanResponse {
@@ -89,16 +98,23 @@ export interface OwaspScanResponse {
   findingsCount: number;
   warningsCount: number;
   passedCount: number;
+  errorsCount?: number;
+  untestedCount?: number;
   manualReviewCount: number;
   summary: string;
+  targetEnvironment?: string;
+  disclaimer?: string;
   categories: Array<{
     categoryId: string;
     categoryName: string;
     description: string;
-    status: 'PASS' | 'FINDING' | 'WARNING' | 'MANUAL REVIEW REQUIRED' | 'NOT TESTED';
+    status: 'PASS' | 'FAIL' | 'FINDING' | 'WARNING' | 'MANUAL REVIEW REQUIRED' | 'NOT TESTED' | 'ERROR';
     title: string;
     evidence: string;
+    explanation?: string;
     remediation: string;
     docsUrl: string;
+    durationMs?: number;
+    timestamp?: string;
   }>;
 }

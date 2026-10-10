@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS scan_history (
     findings_count INTEGER DEFAULT 0,
     warnings_count INTEGER DEFAULT 0,
     passed_count INTEGER DEFAULT 0,
+    errors_count INTEGER DEFAULT 0,
+    untested_count INTEGER DEFAULT 0,
     summary TEXT
 );
 
@@ -23,7 +25,7 @@ CREATE TABLE IF NOT EXISTS scan_findings (
     evidence TEXT,
     risk_explanation TEXT,
     remediation TEXT,
-    status TEXT NOT NULL, -- FINDING, WARNING, PASS, MANUAL REVIEW REQUIRED, NOT TESTED, INCONCLUSIVE
+    status TEXT NOT NULL, -- FAIL, FINDING, WARNING, PASS, MANUAL REVIEW REQUIRED, NOT TESTED, ERROR, INCONCLUSIVE
     FOREIGN KEY(scan_id) REFERENCES scan_history(id) ON DELETE CASCADE
 );
 
@@ -65,6 +67,8 @@ CREATE TABLE IF NOT EXISTS scan_jobs (
     findings_count INTEGER DEFAULT 0,
     warnings_count INTEGER DEFAULT 0,
     passed_count INTEGER DEFAULT 0,
+    errors_count INTEGER DEFAULT 0,
+    untested_count INTEGER DEFAULT 0,
     manual_review_count INTEGER DEFAULT 0,
     summary TEXT,
     FOREIGN KEY(target_id) REFERENCES lab_targets(id)
@@ -79,13 +83,15 @@ CREATE TABLE IF NOT EXISTS scan_checks (
     check_name TEXT NOT NULL,
     target_endpoint TEXT NOT NULL,
     http_method TEXT NOT NULL,
-    status TEXT NOT NULL, -- 'PASS', 'FINDING', 'WARNING', 'MANUAL REVIEW REQUIRED', 'NOT TESTED', 'INCONCLUSIVE'
+    status TEXT NOT NULL, -- 'PASS', 'FAIL', 'FINDING', 'WARNING', 'MANUAL REVIEW REQUIRED', 'NOT TESTED', 'ERROR', 'INCONCLUSIVE'
     severity TEXT NOT NULL, -- 'Critical', 'High', 'Medium', 'Low', 'Informational', 'None'
     confidence TEXT NOT NULL, -- 'High', 'Medium', 'Low'
     evidence TEXT,
+    explanation TEXT,
     remediation TEXT,
     limitations TEXT,
     created_at TEXT NOT NULL,
+    duration_ms INTEGER DEFAULT 0,
     wstg_references TEXT,
     FOREIGN KEY(scan_id) REFERENCES scan_jobs(id) ON DELETE CASCADE
 );

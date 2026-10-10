@@ -179,6 +179,8 @@ realtimeScansRouter.get('/reports/:jobId/download', (req: Request, res: Response
       findingsCount: job.findings_count,
       warningsCount: job.warnings_count,
       passedCount: job.passed_count,
+      errorsCount: job.errors_count || 0,
+      untestedCount: job.untested_count || 0,
       manualReviewCount: job.manual_review_count
     },
     findings,

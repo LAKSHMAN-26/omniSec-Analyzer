@@ -10,6 +10,9 @@ server/dist/
 # SQLite database (contains scan data - do not commit)
 server/cybersentinel.db
 server/cybersentinel.db-journal
+server/cybersentinel-fresh.db
+server/cybersentinel-fresh.db-wal
+server/cybersentinel-fresh.db-shm
 
 # Environment files (NEVER commit .env files - they contain secrets!)
 .env

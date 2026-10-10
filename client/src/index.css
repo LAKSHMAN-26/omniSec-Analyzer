@@ -1,6 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 /* Tailwind CSS v4 - uses @import "tailwindcss" instead of @tailwind directives */
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 /* Design Token Theme */
 @theme {
@@ -136,20 +136,46 @@ body {
   box-shadow: 0 0 12px rgba(34, 211, 238, 0.95);
 }
 
+.geo-leaflet-map .leaflet-popup-content-wrapper {
+  background: #0f172a;
+  color: #f1f5f9;
+  border: 1px solid rgba(6, 182, 212, 0.45);
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.75), 0 0 15px rgba(6, 182, 212, 0.25);
+  padding: 4px;
+}
+
+.geo-leaflet-map .leaflet-popup-tip {
+  background: #0f172a;
+  border: 1px solid rgba(6, 182, 212, 0.45);
+}
+
+.geo-leaflet-map .leaflet-popup-close-button {
+  color: #94a3b8 !important;
+  padding: 6px !important;
+}
+
+.geo-leaflet-map .leaflet-popup-close-button:hover {
+  color: #22d3ee !important;
+}
+
 .geo-popup {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 3px;
-  min-width: 130px;
-  color: #0f172a;
+  min-width: 170px;
+  max-width: 260px;
+  color: #f1f5f9;
   font: 12px/1.4 system-ui, sans-serif;
 }
 
 .geo-popup strong {
   font-size: 13px;
+  color: #67e8f9;
 }
 
 .geo-popup span {
-  color: #475569;
+  color: #cbd5e1;
 }
 
 @keyframes geo-marker-pulse {

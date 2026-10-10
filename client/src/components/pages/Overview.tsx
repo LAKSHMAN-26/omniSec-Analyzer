@@ -57,7 +57,7 @@ export const Overview: React.FC<OverviewProps> = ({ setActiveTab }) => {
       <div className="flex flex-col md:flex-row md:items-center justify-between bg-gradient-to-r from-[#111827] via-[#1E1B4B]/40 to-[#111827] border border-[#1F2937] p-6 rounded-2xl shadow-xl">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center space-x-2">
-            <span>CyberSentinel SOC Dashboard</span>
+            <span>SOC Dashboard</span>
             <span className="text-xs bg-cyan-950 text-cyan-400 border border-cyan-800 px-2.5 py-0.5 rounded-full font-mono">
               Live DB Synced
             </span>

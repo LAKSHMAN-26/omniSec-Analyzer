@@ -15,10 +15,15 @@ describe('IP geolocation response integrity', () => {
       region: 'California',
       country_name: 'United States',
       country_code: 'US',
+      postal: '94043',
+      village: 'Example Village',
+      town: 'Example Town',
+      district: 'Example District',
       latitude: 37.42301,
       longitude: -122.083352,
       org: 'Google LLC',
-      asn: 'AS15169'
+      asn: 'AS15169',
+      connection_type: 'broadband'
     }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
     vi.stubGlobal('fetch', fetchMock);
 
@@ -28,6 +33,11 @@ describe('IP geolocation response integrity', () => {
     expect(response.body.dataOrigin).toBe('live_provider');
     expect(response.body.source).toBe('live_provider');
     expect(response.body.city).toBe('Mountain View');
+    expect(response.body.postalCode).toBe('94043');
+    expect(response.body.village).toBe('Example Village');
+    expect(response.body.town).toBe('Example Town');
+    expect(response.body.district).toBe('Example District');
+    expect(response.body.connectionType).toBe('broadband');
     expect(response.body.lat).toBe(37.42301);
     expect(response.body.lon).toBe(-122.083352);
     expect(fetchMock).toHaveBeenCalledWith(
@@ -48,6 +58,19 @@ describe('IP geolocation response integrity', () => {
     expect(response.body.isDemoData).toBeUndefined();
   });
 
+  it('rejects invalid IP text without querying the external provider', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await request(app).get('/api/geolocation/not-an-ip');
+
+    expect(response.status).toBe(200);
+    expect(response.body.isValid).toBe(false);
+    expect(response.body.dataOrigin).toBe('invalid_input');
+    expect(response.body.error).toContain('Invalid IP address format');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('omits invalid provider coordinates without guessing a map position', async () => {
     vi.stubEnv('GEO_API_KEY', '');
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
@@ -62,6 +85,22 @@ describe('IP geolocation response integrity', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.dataOrigin).toBe('live_provider');
+    expect(response.body.city).toBe('Example City');
+    expect(response.body.lat).toBeUndefined();
+    expect(response.body.lon).toBeUndefined();
+  });
+
+  it('omits blank provider coordinates instead of converting them to zero', async () => {
+    vi.stubEnv('GEO_API_KEY', '');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      city: 'Example City',
+      latitude: '',
+      longitude: '   '
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } })));
+
+    const response = await request(app).get('/api/geolocation/9.9.9.9');
+
+    expect(response.status).toBe(200);
     expect(response.body.city).toBe('Example City');
     expect(response.body.lat).toBeUndefined();
     expect(response.body.lon).toBeUndefined();

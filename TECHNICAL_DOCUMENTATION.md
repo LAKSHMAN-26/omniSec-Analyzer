@@ -1,4 +1,4 @@
-# OmniSec Analyzer — Technical Documentation
+# OmniSec Analyzer - Technical Documentation
 
 **Updated:** 2026-10-10  
 **Architecture:** React/TypeScript single-page client, Express/TypeScript API, SQLite persistence  
@@ -6,30 +6,50 @@
 
 ## 1. System overview
 
-OmniSec Analyzer is a browser-based application with sidebar-driven page selection. The client calls the backend for features that need persisted data or server-side testing. Two newer knowledge features are self-contained in the client: Identity Attack Paths loads a fictional graph, and OSINT Explorer browses a curated resource catalogue.
+OmniSec Analyzer is a browser-based application with a sidebar-driven UI. The client calls the backend for features that need persisted data or server-side testing. Two newer knowledge features are client-side and self-contained: Identity Attack Paths loads a fictional graph, and OSINT Explorer browses a curated resource catalogue. The app does not use React Router; it uses a custom tab state in `client/src/App.tsx`.
 
 ```text
 Browser
   React + TypeScript + Tailwind CSS
-  ├── Dashboard, SQL lab, OWASP assessment, IP context
-  ├── Identity Attack Paths (fictional client-side graph)
-  └── OSINT Explorer (client-side resource directory)
-            │ REST/JSON and Server-Sent Events
-            ▼
+  |-- Overview dashboard
+  |-- Geolocation Intel
+  |-- SQL Injection Tester
+  |-- OWASP Top 10 assessment
+  |-- Identity Attack Paths (fictional graph demo)
+  |-- OSINT Explorer (resource directory)
+  |-- Scan History, Reports, Settings, Help
+  |-- Client-side data and UI state
+      | REST/JSON and Server-Sent Events
+      v
 Express + TypeScript API
-  ├── Registered local demo lab and real-time assessment
-  ├── Geolocation, settings, scan history, and reports
-  └── Defensive middleware and input validation
-            │
-            ▼
+  |-- Local lab registration and OWASP checks
+  |-- Geolocation lookup and settings persistence
+  |-- Scan history/report APIs
+  |-- Defensive middleware and validation
+      |
+      v
 SQLite (better-sqlite3)
 ```
 
-The application uses a custom `activeTab` switch in `client/src/App.tsx`, not React Router. Existing rate-limiting middleware is a backend protection; the separate API rate-limit tester feature was removed.
+## 2. Feature summary
 
-## 2. Current technology stack
+### Current modules
 
-Versions below are the versions declared in the client and server manifests at the time of update. Semver ranges may resolve to newer compatible patch versions after installation.
+- **Overview:** dashboard statistics and entry points to the application modules.
+- **Geolocation Intel:** IP address context lookup with approximate city/region information and map display.
+- **SQL Injection Tester:** vulnerable-versus-secure examples against the application's educational fixtures.
+- **OWASP Top 10:** local-target assessment, live streaming, cancellation, evidence review, and downloadable reports.
+- **Identity Attack Paths:** a fictional Acme Corporation graph exploring privilege paths and simulated remediation.
+- **OSINT Explorer:** a client-side directory and learning interface for public tools, sources, and research topics.
+- **Scan History, Reports, Settings, Help:** supporting modules for findings, exports, configuration, and guidance.
+
+### Removed from the current product surface
+
+- **API Rate Limit Tester** - removed.
+- **Standalone API BOLA tester** - removed.
+- **Defensive API rate-limiting middleware** remains active on the backend as a safeguard, but the separate demonstration feature is not exposed in the UI.
+
+## 3. Current technology stack
 
 | Layer | Technologies |
 |---|---|
@@ -38,17 +58,9 @@ Versions below are the versions declared in the client and server manifests at t
 | Middleware / validation | Helmet `^8.0.0`, CORS `^2.8.5`, Express Rate Limit `^7.5.0`, Zod `^3.24.1` |
 | Tests | Vitest `^2.1.8`, Supertest `^7.0.0` |
 
-No graph package is required. The identity explorer and OSINT knowledge map render interactive SVG and use lightweight traversal/catalogue helpers.
+Identity Attack Paths and OSINT Explorer do not require a graph package or external account. They render interactive SVG and catalogue data using lightweight helpers and browser-local state.
 
-## 3. Main application areas
-
-### Existing application modules
-
-- **Overview:** dashboard statistics and entry points to application modules.
-- **Geolocation Intel:** IP address context lookup. The provider/configuration can use an external service; treat submitted values according to that provider's terms and privacy policy.
-- **SQL Injection Tester:** vulnerable-versus-secure examples against the application's educational fixtures.
-- **OWASP Top 10:** runs checks against registered local demo targets, displays progress and findings, supports cancellation, and provides report output.
-- **Scan History, Reports, Settings, Help:** supporting features for prior scans, report retrieval, application settings, and reference information.
+## 4. Main application areas
 
 ### Identity Attack Paths
 
@@ -58,11 +70,9 @@ Files:
 - `client/src/features/identityAttackPath/analysis.ts`
 - `client/src/components/pages/IdentityAttackPathExplorer.tsx`
 
-The demo graph represents a fictional Acme Corporation with 12 users, 5 groups, 4 computers, 3 applications, 2 resources, and 24 directed relationships. Analysis follows only enabled directed edges and does not infer administrative access from group membership alone. It detects paths to nodes explicitly marked privileged and guards against cycles.
+The demo graph represents a fictional Acme Corporation with a static set of users, groups, computers, applications, resources, and directed relationships. Analysis follows only enabled directed edges and does not infer administrative access from group membership alone. It detects paths to privileged nodes and guards against cycles. The UI exposes a simulated fix step that disables a relationship in React state and recalculates paths. Nothing is sent to a live directory or a real identity provider.
 
-Simulate Fix disables a relationship in React state, then recalculates paths. Reset reloads the original in-memory fixture. Nothing is sent to the server or applied to a real identity provider. Graph findings and remediation impacts are simulated examples, not live scan results.
-
-### OSINT Universe
+### OSINT Explorer
 
 Files:
 
@@ -70,22 +80,18 @@ Files:
 - `client/src/features/osintUniverse/analysis.ts`
 - `client/src/components/pages/OsintUniverse.tsx`
 
-This client-only feature is a directory and learning interface, not an OSINT collection system. It contains ten top-level categories and nested topic/resource entries. Only the root and top-level category nodes are initially drawn; users expand the hierarchy on demand. Search covers names, categories, descriptions, tags, and use cases, then reveals the result in its graph context. Favorites are stored in browser `localStorage`.
+This client-side feature is a directory and learning interface, not an OSINT collection system. It includes multiple categories and resource entries, search, favorites, and a beginner path. Favorites are stored in browser `localStorage`. Resource metadata includes descriptions, use cases, optional links, tags, related resources, safety notes, pricing/license status, and verification status. Seeded resource facts are clearly labeled as unverified until checked independently.
 
-Catalogue metadata includes resource type, category, descriptions, use cases, optional links, tags, related resources, safety notes, pricing/license status, and verification status. Seeded resource facts and links are marked **unverified** until independently checked. Unknown pricing and license claims remain `unknown`; absent URLs are not fabricated. Outbound links are restricted to HTTPS, open in a new tab, and use `rel="noopener noreferrer"`.
+## 5. Safety and data boundaries
 
-The learning mode offers a beginner sequence from search and domain research through threat intelligence, forensics, evidence evaluation, reporting, and ethics. The safety copy warns users to respect privacy, authorization, service terms, and rate limits.
+1. **OWASP assessment:** the real-time assessment selects only registered lab targets and enforces the local-target boundary.
+2. **Passive URL analyzer:** the URL safety check evaluates structure locally without visiting the submitted destination.
+3. **Geolocation:** public IP lookups may involve an external geolocation provider; verify provider terms and privacy policy before use.
+4. **Identity graph:** all identities, resources, and remediation paths are fictional demo data.
+5. **OSINT Explorer:** the app does not scrape pages, query services automatically, or bypass access controls. A user may only open external resources after choosing to follow a link.
+6. **Interpretation:** public records and external service data may be incomplete, stale, or inaccurate. Use them as educational context, not proof of real-world compromise.
 
-## 4. Safety and data boundaries
-
-1. **OWASP active checks:** the real-time assessment selects registered lab targets and enforces the local target boundary. It is not intended for arbitrary Internet targets. Run it only against the bundled, authorized educational environment.
-2. **Passive URL analyzer:** evaluates submitted URL syntax and indicators locally. It does not resolve the URL or make a request to the submitted destination.
-3. **Geolocation:** unlike the local-only educational graph features, an IP lookup may involve an external geolocation provider. Check the active provider configuration and its data handling before use.
-4. **Identity graph:** all organization identities, resources, paths, and remediation simulations are fictional client-side demo data.
-5. **OSINT directory:** does not automatically scrape pages, query services, collect personal data, or bypass access controls. A user may open external resources intentionally; those services then apply their own policies.
-6. **Data interpretation:** public records and service results can be missing, stale, imprecise, or incorrect. Do not treat exposure as proof of vulnerability or a public indicator as confirmed attribution.
-
-## 5. Repository structure
+## 6. Repository structure
 
 ```text
 client/
@@ -130,9 +136,9 @@ Omnisec-Analyzer-Presentation.pptx
 
 There is no root npm workspace. Client and server commands run from their respective directories.
 
-## 6. API and persistence overview
+## 7. API and persistence overview
 
-The Express app is assembled in `server/src/app.ts`. Global middleware includes Helmet, CORS, JSON/form parsing, and an API rate limiter. Routes currently cover:
+The Express app is assembled in `server/src/app.ts`. Global middleware includes Helmet, CORS, JSON/form parsing, and an API rate limiter. Current route areas include:
 
 | Route area | Purpose |
 |---|---|
@@ -147,19 +153,11 @@ The Express app is assembled in `server/src/app.ts`. Global middleware includes 
 | `/api/lab` | Vulnerable and secure educational demo endpoints |
 | `/api/url-analyzer` | Passive URL safety inspection |
 
-Exact request and response schemas are defined in the route handlers and client types; use those as the source of truth when changing the API.
+Exact request and response schemas live in the route handlers and client types; use those as the source of truth during changes.
 
-### IP geolocation
+SQLite is initialized by `server/src/database/db.ts` using the schema in `server/src/database/schema.sql`. The database supports lab target registration, scan jobs/check results, history/findings, settings, and similar application records. The identity-path demo and OSINT catalogue are not stored in SQLite.
 
-`GET /api/geolocation/:ip` uses ipapi.co's unauthenticated JSON endpoint for public IPs; no API key is required for the tested basic lookup. There are no built-in geolocation samples. Private, reserved, and invalid addresses are not queried and do not receive invented coordinates. Provider timeouts, rate limits, authentication rejection, and other failures are surfaced as errors.
-
-The client uses Leaflet with CARTO dark tiles and OpenStreetMap attribution. `VITE_GEO_TILE_URL` can configure a compatible tile URL; follow the selected provider's attribution and usage policy. A map marker is shown only for valid coordinates from a successful live-provider response. City-level results are estimates, not exact physical locations or live tracking.
-
-SQLite is initialized by `server/src/database/db.ts` using the schema in `server/src/database/schema.sql`. The database supports lab target registration, scan jobs/check results, history/findings, settings, and related application records. The identity-path demo and OSINT catalogue are not stored in SQLite.
-
-Do not describe audit logs as tamper-proof unless storage protections are actually implemented and independently verified. Do not commit local database, WAL/SHM sidecar, or environment-secret files.
-
-## 7. Running locally (Windows PowerShell)
+## 8. Running locally (Windows PowerShell)
 
 Install packages separately:
 
@@ -184,11 +182,9 @@ cd C:\omniSec-Analyzer\client
 npm run dev
 ```
 
-The server defaults to port `5000`; the Vite development server usually prints `http://localhost:5173`. Follow the actual URL printed if that port is occupied. Visit `/api/health` on the server to inspect its health response.
+The server defaults to port `5000` and the Vite app typically listens on `http://localhost:5173`. Visit `/api/health` on the server to confirm the service is reachable.
 
-Local environment files should be configured from the actual application requirements and kept out of version control. Never paste credentials into source code, documentation, screenshots, or presentation files.
-
-## 8. Tests and validation
+## 9. Tests and validation
 
 ```powershell
 cd C:\omniSec-Analyzer\client
@@ -199,22 +195,19 @@ cd C:\omniSec-Analyzer\server
 npm test
 ```
 
-The server suite uses Vitest and Supertest. It covers API validation and behavior, passive URL analysis, real-time OWASP/lab behavior, identity-graph traversal, and OSINT catalogue search/validation.
+The server suite uses Vitest and Supertest. It covers API validation, passive URL analysis, real-time OWASP/lab behavior, identity-graph traversal, and OSINT catalogue search/validation.
 
 Verified for this documentation update on 2026-10-10:
 
-- Client `npm run build`: passed. Existing non-blocking warnings include CSS `@import` ordering and a JavaScript bundle chunk over Vite's 500 kB advisory threshold.
+- Client `npm run build`: passed.
 - Targeted Oxlint for the OSINT UI/data and navigation: passed.
-- Server `npm test`: **83 tests passed across 5 test files**.
-- Browser smoke checks: OSINT navigation, category expansion, resource search/selection, favorite persistence in the current browser session, and responsive details drawer verified.
+- Server `npm test`: passed for the current test suite.
+- Manual smoke checks: OSINT navigation, category expansion, search/selection, favorite persistence, and the identity path demo were reviewed.
 
-Test counts and build output may change as the code evolves. Passing tests do not verify the availability, accuracy, legality, licensing, or current terms of external resources.
+## 10. Known limitations
 
-## 9. Known limitations
-
-- OSINT external resources and catalogue descriptions have not all been independently audited; each entry remains pending verification unless explicitly updated after review.
-- Pricing and license status are intentionally unknown unless verified.
-- IP geolocation precision and provider coverage vary; geolocation is not a precise identity or address determination.
+- OSINT external resources and catalogue descriptions may not all be independently audited.
+- Pricing and license status remain intentionally unknown unless verified.
+- IP geolocation precision and provider coverage vary; it is not a precise identity determination.
 - Identity Attack Paths demonstrates traversal on a static fictional graph, not on a connected directory.
-- The local OWASP test suite validates the bundled lab. It is not a substitute for an authorized security assessment, manual review, or production monitoring.
-- Build warnings about CSS import ordering and chunk size remain non-blocking and are not introduced as claims of a build failure.
+- The local OWASP test suite validates the bundled lab and is not a substitute for an authorized security assessment or production monitoring.
